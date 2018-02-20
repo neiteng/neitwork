@@ -238,6 +238,48 @@ class multivariable_activation_layer(activation_layer):
 	def backward(self, dy):
 		return np.matmul(dy[:, np.newaxis, :], np.transpose(self.df(self.x), axes = [0, 2, 1])).reshape(dy.shape[0], -1)
 
+class batch_normalization_layer(learning_layer):
+	'''
+	if gamma or beta is None, gamma : 1.0, beta : 0.0
+	'''
+	def __init__(self, gamma = None, beta = None, eps = 1e-7):
+		self.gamma = gamma
+		self.beta = beta
+		self.eps = eps
+		self.var = None
+		self.hat_x = None
+		self.dgamma = None
+		self.dbeta = None
+
+	def forward(self, x):
+		if self.gamma is None:
+			self.gamma = np.ones_like(x[0])
+		if self.beta is None:
+			self.beta = np.zeros_like(x[0])
+		mean = np.mean(x, axis = 0, keepdims = True)
+		self.var = np.var(x, axis = 0)
+		self.hat_x = (x - mean) / np.sqrt(self.var.reshape(1, -1) + self.eps)
+		y = self.gamma.reshape(1, -1) * self.hat_x + self.beta.reshape(1, -1)
+		return y
+
+	def backward(self, dy):
+		n = dy.shape[0]
+		self.dgamma = np.sum(self.hat_x * dy, axis = 0)
+		self.dbeta = np.sum(dy, axis = 0)
+		dx = (self.gamma / np.sqrt(self.var + self.eps)).reshape(1, -1) * \
+			(dy - (self.dbeta.reshape(1, -1) + self.hat_x * self.dgamma.reshape(1, -1)) / n)
+		return dx
+
+	def get_weight(self):
+		return { "gamma" : self.gamma, "beta" : self.beta }
+
+	def get_grad(self):
+		return { "gamma" : self.dgamma, "beta" : self.dbeta }
+
+	def update_weight(self, delta):
+		self.gamma += delta["gamma"]
+		self.beta += delta["beta"]
+
 class dropout_layer(abstract_layer):
 	def __init__(self, dropout_ratio):
 		super().__init__()

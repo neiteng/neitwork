@@ -27,7 +27,8 @@ class trainer:
 			if issubclass(type(l), layer.learning_layer):
 				grad = l.get_grad()
 				weight = l.get_weight()
-				grad["W"] += self.weight_decay * weight["W"]
+				if "W" in weight:
+					grad["W"] += self.weight_decay * weight["W"]
 
 	def set_data(self, d):
 		self.network[-1].set_data(d)
