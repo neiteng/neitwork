@@ -1,5 +1,6 @@
 import numpy as np
 from . import function as func
+from . import util
 import time
 from abc import ABCMeta, abstractmethod
 
@@ -95,7 +96,7 @@ class convolution_layer(learning_layer):
 	def forward(self, x):
 		n = x.shape[0]
 		x = x.reshape(n, self.h, self.w, self.k)
-		x = im2patch(x, self.fh, self.fw, self.stride, self.pad, self.padding_mode, **self.padding_args).reshape(-1, self.k * self.fh * self.fw)
+		x = util.im2patch(x, self.fh, self.fw, self.stride, self.pad, self.padding_mode, **self.padding_args).reshape(-1, self.k * self.fh * self.fw)
 		self.x = x
 		y = np.dot(x, self.W) + self.b # y : (n, h, w) * m
 		return y.reshape(n, -1)
@@ -112,7 +113,7 @@ class convolution_layer(learning_layer):
 
 		dx = np.dot(dy, self.W.T)
 		dx = dx.reshape(n, self.oh, self.ow, self.k, self.fh, self.fw)
-		dx = patch2im(dx, self.h, self.w, self.stride, self.pad)
+		dx = util.patch2im(dx, self.h, self.w, self.stride, self.pad)
 		return dx.reshape(n, -1)
 
 	def get_weight(self):
@@ -152,7 +153,7 @@ class max_pooling_layer(abstract_layer):
 	def forward(self, x):
 		n = x.shape[0]
 		x = x.reshape(n, self.h, self.w, self.k)
-		x = im2patch(x, self.fh, self.fw, self.stride, self.pad, self.padding_mode, **self.padding_args).reshape(-1, self.fh * self.fw)
+		x = util.im2patch(x, self.fh, self.fw, self.stride, self.pad, self.padding_mode, **self.padding_args).reshape(-1, self.fh * self.fw)
 		self.argmax = np.argmax(x, axis = 1)
 		x = np.max(x, axis = 1)
 		return x.reshape(n, self.oh, self.ow, self.k).reshape(n, -1)
@@ -165,7 +166,7 @@ class max_pooling_layer(abstract_layer):
 		dx = np.zeros((n * self.oh * self.ow * self.k, self.fh * self.fw))
 		dx[np.arange(dy.size), self.argmax] = dy
 		dx = dx.reshape(n, self.oh, self.ow, self.k, self.fh, self.fw)
-		dx = patch2im(dx, self.h, self.w, self.stride, self.pad)
+		dx = util.patch2im(dx, self.h, self.w, self.stride, self.pad)
 		return dx.reshape(n, -1)
 
 class average_pooling_layer(abstract_layer):
@@ -363,56 +364,3 @@ class ident_and_mean_squared_error_layer(last_layer):
 	def backward(self, dy):
 		return self.y - self.d
 
-'''
-m : input num, n : output num
-'''
-def make_linear_with_randn(m, n, std_dev):
-	return linear_layer(np.random.randn(m, n) * std_dev(m), np.zeros(n))
-
-def make_convolution_with_randn(shape, filter_shape, stride, pad, std_dev, padding_mode = "constant"):
-	return convolution_layer(np.random.randn(shape[2] * filter_shape[0] * filter_shape[1], shape[3]) * std_dev(shape[0] * shape[1] * shape[2]), np.zeros(shape[3]), shape, filter_shape, stride, pad, padding_mode)
-
-'''
-x : n * h * w * k
-out : n * oh * ow * k * fh * fw
-'''
-def im2patch(x, fh, fw, stride, pad, padding_mode, **padding_args):
-	n, h, w, k = x.shape
-	oh = (h + pad[0] + pad[1] - fh) // stride[0] + 1
-	ow = (w + pad[2] + pad[3] - fw) // stride[1] + 1
-	# zero padding
-	x = x.transpose(1, 2, 0, 3)
-	x = np.pad(x, [(pad[0], pad[1]), (pad[2], pad[3]), (0, 0), (0, 0)], mode = padding_mode, **padding_args)
-	# now, x : h, w, n, k
-	# out : fh, fw, oh, ow, n, k
-	out = np.empty((fh, fw, oh, ow, n, k))
-
-	for top in range(fh):
-		bottom = top + oh * stride[0]
-		for left in range(fw):
-			right = left + ow * stride[1]
-			out[top, left, :, :, :, :] = x[top : bottom : stride[0], left : right : stride[1], :, :]
-
-	# n, oh, ow, k, fh, fw
-	out = out.transpose(4, 2, 3, 5, 0, 1)
-	return out
-
-'''
-x : n * oh * ow * k * fh * fw
-out : n * h * w * k
-'''
-def patch2im(x, h, w, stride, pad):
-	n, oh, ow, k, fh, fw = x.shape
-	x = x.transpose(4, 5, 1, 2, 0, 3)
-	# now, fh, fw, oh, ow, n, k
-	# out : h, w, n, k
-	out = np.zeros((fh + oh * stride[0], fw + ow * stride[1], n, k))
-	for top in range(fh):
-		bottom = top + stride[0] * oh
-		for left in range(fw):
-			right = left + stride[1] * ow
-			out[top : bottom : stride[0], left : right : stride[1], :, :] += x[top, left, :, :, :, :]
-
-	out = out[pad[0] : h + pad[0], pad[2] : w + pad[2], :, :]
-	out = out.transpose(2, 0, 1, 3)
-	return out # n * h * w * k

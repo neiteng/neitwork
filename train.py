@@ -5,6 +5,7 @@ from neitwork import trainer as tr
 from neitwork import layer
 from neitwork import function as func
 from neitwork import optimizer as opt
+from neitwork import util
 
 def read_pickle(path):
 	obj = None
@@ -32,19 +33,19 @@ def main():
 	configurate network
 	'''
 	N = []
-	N.append(layer.make_convolution_with_randn(shape = (28, 28, 1, 32), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
+	N.append(util.make_convolution_with_randn(shape = (28, 28, 1, 32), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
 	N.append(layer.batch_normalization_layer())
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.max_pooling_layer(shape = (28, 28, 32), filter_shape = (2, 2), stride = (2, 2), pad = (0, 0, 0, 0)))
-	N.append(layer.make_convolution_with_randn(shape = (14, 14, 32, 64), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
+	N.append(util.make_convolution_with_randn(shape = (14, 14, 32, 64), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
 	N.append(layer.batch_normalization_layer())
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.max_pooling_layer(shape = (14, 14, 64), filter_shape = (2, 2), stride = (2, 2), pad = (0, 0, 0, 0)))
-	N.append(layer.make_linear_with_randn(7 * 7 * 64, 1024, std_dev = func.he_init_std_dev))
+	N.append(util.make_linear_with_randn(7 * 7 * 64, 1024, std_dev = func.he_init_std_dev))
 	N.append(layer.batch_normalization_layer())
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.dropout_layer(dropout_ratio))
-	N.append(layer.make_linear_with_randn(1024, 10, std_dev = func.he_init_std_dev))
+	N.append(util.make_linear_with_randn(1024, 10, std_dev = func.he_init_std_dev))
 	N.append(layer.batch_normalization_layer())
 	N.append(layer.soft_max_and_cross_entropy_error_layer()) # faster
 	# N.append(layer.multivariable_activation_layer(func.soft_max, func.d_soft_max))
