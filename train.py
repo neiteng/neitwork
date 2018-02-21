@@ -19,14 +19,14 @@ def main():
 	x_test = read_pickle("../dataset/t10k-images-idx3-ubyte.pkl")
 	d_test = read_pickle("../dataset/t10k-labels-idx1-ubyte.pkl")
 
-	each_iter_num = 100
-	call_learn_num = 50
+	each_iter_num = 200
+	call_learn_num = 25
 	train_num = x_train.shape[0]
 
 	batch_size = 50
 	each_epoch = batch_size * each_iter_num / train_num
 	train_num = x_train.shape[0]
-	learning_rate = 1e-3
+	learning_rate = 1e-4
 	dropout_ratio = 0.5
 
 	'''
@@ -34,7 +34,6 @@ def main():
 	'''
 	N = []
 	N.append(util.make_convolution_with_randn(shape = (28, 28, 1, 32), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
-	N.append(layer.batch_normalization_layer())
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.max_pooling_layer(shape = (28, 28, 32), filter_shape = (2, 2), stride = (2, 2), pad = (0, 0, 0, 0)))
 	N.append(util.make_convolution_with_randn(shape = (14, 14, 32, 64), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
@@ -46,7 +45,6 @@ def main():
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.dropout_layer(dropout_ratio))
 	N.append(util.make_linear_with_randn(1024, 10, std_dev = func.he_init_std_dev))
-	N.append(layer.batch_normalization_layer())
 	N.append(layer.soft_max_and_cross_entropy_error_layer()) # faster
 	# N.append(layer.multivariable_activation_layer(func.soft_max, func.d_soft_max))
 	# N.append(layer.error_layer(func.cross_entropy_error, func.d_cross_entropy_error))

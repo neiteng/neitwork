@@ -162,7 +162,7 @@ class max_pooling_layer(abstract_layer):
 	# ret : n * (h, w, k)
 	def backward(self, dy):
 		n = dy.shape[0]
-		dy = dy.flatten()
+		dy = dy.ravel()
 		dx = np.zeros((n * self.oh * self.ow * self.k, self.fh * self.fw))
 		dx[np.arange(dy.size), self.argmax] = dy
 		dx = dx.reshape(n, self.oh, self.ow, self.k, self.fh, self.fw)
