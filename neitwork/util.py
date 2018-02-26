@@ -8,7 +8,7 @@ def make_linear_with_randn(m, n, std_dev):
 	return layer.linear_layer(np.random.randn(m, n) * std_dev(m), np.zeros(n))
 
 def make_convolution_with_randn(shape, filter_shape, stride, pad, std_dev, padding_mode = "constant"):
-	return layer.convolution_layer(np.random.randn(shape[2] * filter_shape[0] * filter_shape[1], shape[3]) * std_dev(shape[0] * shape[1] * shape[2]), np.zeros(shape[3]), shape, filter_shape, stride, pad, padding_mode)
+	return layer.convolution_layer(np.random.randn(shape[2] * filter_shape[0] * filter_shape[1], shape[3]) * std_dev(filter_shape[0] * filter_shape[1] * shape[2]), np.zeros(shape[3]), shape, filter_shape, stride, pad, padding_mode)
 
 '''
 x : n * h * w * k

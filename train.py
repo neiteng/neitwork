@@ -6,6 +6,8 @@ from neitwork import layer
 from neitwork import function as func
 from neitwork import optimizer as opt
 from neitwork import util
+import sys
+from PIL import Image 
 
 def read_pickle(path):
 	obj = None
@@ -19,14 +21,14 @@ def main():
 	x_test = read_pickle("../dataset/t10k-images-idx3-ubyte.pkl")
 	d_test = read_pickle("../dataset/t10k-labels-idx1-ubyte.pkl")
 
-	each_iter_num = 200
-	call_learn_num = 25
+	each_iter_num = 100
+	call_learn_num = 36
 	train_num = x_train.shape[0]
 
 	batch_size = 50
 	each_epoch = batch_size * each_iter_num / train_num
 	train_num = x_train.shape[0]
-	learning_rate = 1e-4
+	learning_rate = 1e-3
 	dropout_ratio = 0.5
 
 	'''
@@ -34,14 +36,14 @@ def main():
 	'''
 	N = []
 	N.append(util.make_convolution_with_randn(shape = (28, 28, 1, 32), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
+	# N.append(layer.batch_normalization_layer())
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.max_pooling_layer(shape = (28, 28, 32), filter_shape = (2, 2), stride = (2, 2), pad = (0, 0, 0, 0)))
 	N.append(util.make_convolution_with_randn(shape = (14, 14, 32, 64), filter_shape = (5, 5), stride = (1, 1), pad = (2, 2, 2, 2), std_dev = func.he_init_std_dev))
-	N.append(layer.batch_normalization_layer())
+	# N.append(layer.batch_normalization_layer())
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.max_pooling_layer(shape = (14, 14, 64), filter_shape = (2, 2), stride = (2, 2), pad = (0, 0, 0, 0)))
 	N.append(util.make_linear_with_randn(7 * 7 * 64, 1024, std_dev = func.he_init_std_dev))
-	N.append(layer.batch_normalization_layer())
 	N.append(layer.activation_layer(func.ramp, func.d_ramp))
 	N.append(layer.dropout_layer(dropout_ratio))
 	N.append(util.make_linear_with_randn(1024, 10, std_dev = func.he_init_std_dev))
